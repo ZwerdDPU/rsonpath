@@ -1,5 +1,7 @@
 { nixpkgs ? import <nixpkgs> { }, ... }:
 let
+  # Pin the installed package versions
+  # Latest as of 4/5/23
   stable = import (nixpkgs.fetchFromGitHub {
     owner = "NixOS";
     repo = "nixpkgs";
@@ -15,6 +17,7 @@ let
 in stable.mkShell rec {
   buildInputs =
     (with stable; [
+      gnupg
       rustup
       gcc
       pkg-config
@@ -31,6 +34,7 @@ in stable.mkShell rec {
       rust-analyzer
       cargo-hack
     ]) ++ (with unstable; [
+      # Just is in unstable due to the use of the private flag.
       just
     ]);
 
