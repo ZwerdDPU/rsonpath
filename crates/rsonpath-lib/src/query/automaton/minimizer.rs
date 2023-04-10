@@ -711,4 +711,93 @@ mod tests {
 
         assert_eq!(result, expected);
     }
+
+    #[test]
+    fn minimization_deduplicates_trivial_test() {
+        // Query = $..a.*.*..b.*.*
+        let label_a = Label::new("a");
+        let label_b = Label::new("b");
+
+        let nfa = NondeterministicAutomaton {
+            ordered_states: vec![
+                NfaState::Recursive(nfa::Transition::Labelled(&label_a)),
+                NfaState::Direct(nfa::Transition::Wildcard),
+                NfaState::Direct(nfa::Transition::Wildcard),
+                NfaState::Recursive(nfa::Transition::Labelled(&label_b)),
+                NfaState::Direct(nfa::Transition::Wildcard),
+                NfaState::Direct(nfa::Transition::Wildcard),
+                NfaState::Accepting,
+            ],
+        };
+
+        let result = minimize(nfa).unwrap();
+        let expected = Automaton {
+            states: vec![
+                StateTable {
+                    transitions: smallvec![],
+                    fallback_state: State(0),
+                    attributes: StateAttributes::REJECTING,
+                },
+                StateTable {
+                    transitions: smallvec![(&label_a, State(2))],
+                    fallback_state: State(1),
+                    attributes: StateAttributes::EMPTY,
+                },
+                StateTable {
+                    transitions: smallvec![(&label_a, State(3))],
+                    fallback_state: State(1),
+                    attributes: StateAttributes::EMPTY,
+                },
+                StateTable {
+                    transitions: smallvec![(&label_a, State(4))],
+                    fallback_state: State(1),
+                    attributes: StateAttributes::EMPTY,
+                },
+                StateTable {
+                    transitions: smallvec![(&label_b, State(5))],
+                    fallback_state: State(1),
+                    attributes: StateAttributes::EMPTY,
+                },
+                StateTable {
+                    transitions: smallvec![(&label_b, State(7))],
+                    fallback_state: State(4),
+                    attributes: StateAttributes::EMPTY,
+                },
+                StateTable {
+                    transitions: smallvec![(&label_b, State(11))],
+                    fallback_state: State(4),
+                    attributes: StateAttributes::TRANSITIONS_TO_ACCEPTING,
+                },
+                StateTable {
+                    transitions: smallvec![(&label_b, State(9))],
+                    fallback_state: State(4),
+                    attributes: StateAttributes::TRANSITIONS_TO_ACCEPTING,
+                },
+                StateTable {
+                    transitions: smallvec![(&label_b, State(11))],
+                    fallback_state: State(4),
+                    attributes: StateAttributes::ACCEPTING
+                        | StateAttributes::TRANSITIONS_TO_ACCEPTING,
+                },
+                StateTable {
+                    transitions: smallvec![(&label_b, State(9))],
+                    fallback_state: State(4),
+                    attributes: StateAttributes::ACCEPTING
+                        | StateAttributes::TRANSITIONS_TO_ACCEPTING,
+                },
+                StateTable {
+                    transitions: smallvec![(&label_b, State(5))],
+                    fallback_state: State(4),
+                    attributes: StateAttributes::ACCEPTING,
+                },
+                StateTable {
+                    transitions: smallvec![(&label_b, State(7))],
+                    fallback_state: State(4),
+                    attributes: StateAttributes::ACCEPTING,
+                },
+            ],
+        };
+
+        assert_eq!(result, expected);
+    }
 }
